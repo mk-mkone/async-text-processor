@@ -1,0 +1,25 @@
+# Environnement Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+.venv/
+venv/
+
+# Fichiers de log
+*.log
+
+# Docker
+*.pid
+*.db
+docker-compose.override.yml
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Editeurs PyCharm
+.idea/

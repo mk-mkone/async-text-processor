@@ -1,0 +1,116 @@
+# Analyseur de texte distribué
+
+## Objectif
+
+Mettre en place un système distribué capable de :
+
+* Consommer efficacement un grand volume de messages RabbitMQ.
+* Traiter chaque message avec une tâche métier lourde (analyse de texte).
+* Stocker les résultats dans MongoDB.
+* Réémettre un message final une fois le traitement terminé.
+* Tester la charge avec un simulateur
+
+## Stack technique
+
+| Composant             | Rôle                                                |
+|-----------------------|-----------------------------------------------------|
+| **RabbitMQ**          | Broker de messages AMQP pour ingestion des messages |
+| **aio-pika**          | Client Python asynchrone pour RabbitMQ              |
+| **MongoDB**           | Base de données NoSQL pour stocker les résultats    |
+| **motor**             | Client MongoDB asynchrone pour Python               |
+| **Docker Compose**    | Orchestration locale de tous les services           |
+| **loadgen**           | Générateur de messages pour tests de charge         |
+
+---
+
+## Justification des choix techniques
+
+### Pourquoi `aio-pika` ?
+
+* Client AMQP asynchrone : idéal pour les systèmes `asyncio`
+* Permet une consommation non bloquante des messages RabbitMQ
+* Plus simple et plus moderne que `pika` synchrone
+* Plus simple à scaler dans une boucle event-based que `pika`
+* Gère reconnect, QoS, ack explicites, publication, etc.
+* Compatible avec le traitement asynchrone + ProcessPoolExecutor
+
+### Pourquoi `motor` ?
+
+* Driver officiel MongoDB asynchrone
+* Parfait pour insérer / mettre à jour des documents sans bloquer
+* S’intègre nativement avec `asyncio`, compatible avec `aio-pika`
+* Plus performant que `pymongo` dans des applications concurrentes
+
+Ces deux choix permettent de traiter efficacement des messages en continu, gèrent bien la montée en charge et (point de vue personnel) ne bloquent jamais **inutilement** la boucle d'événements.
+
+### Pourquoi `asyncio` + `ProcessPoolExecutor` ?
+
+* `asyncio` permet d’orchestrer efficacement un flux continu de messages et d’opérations I/O (MongoDB, RabbitMQ) sans bloquer
+* Idéal pour une architecture réactive, événementielle et faiblement consommatrice de threads
+* `ProcessPoolExecutor` permet d’exécuter en parallèle des traitements **CPU-bound** (ex. : scoring, NLP, parsing)
+* Combine le meilleur des deux mondes : réactivité non bloquante + puissance de calcul parallèle
+* Permet de découpler la logique métier lourde du flux principal, sans impacter la performance globale
+
+Cette architecture permet d’orchestrer efficacement un flux massif de messages RabbitMQ tout en traitant en parallèle des tâches métier lourdes.
+
+* `asyncio` gère les opérations non bloquantes : consommation RabbitMQ, insertion MongoDB, publication, etc.
+* Les tâches CPU-intensives sont déléguées à des workers via `ProcessPoolExecutor`, libérant ainsi la boucle d’événements principale.
+
+![Architecture asyncio + ProcessPoolExecutor](./assets/Parallel_processing.png)
+
+---
+
+## Modules du projet
+
+### 1. `worker/` — Service d’analyse principal
+
+* `aio-pika` pour la consommation RabbitMQ
+* `motor` pour la persistance MongoDB
+* `ProcessPoolExecutor` pour le traitement CPU-bound
+* Publication d’un message traité (file `processed_texts`)
+
+### 2. `loadgen/` — Simulateur de charge
+
+* Génère un volume massif de messages `update` ou `delete`
+
+---
+
+## Structure du projet
+
+```bash
+project/
+├── assets/
+│   └── Parallel_processing.png
+├── docker-compose.yml
+├── worker/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── setup.py
+│   ├── requirements.txt
+│   └── app/
+├── .gitignore
+├── loadgen/
+├── tests/
+├── Makefile
+
+```
+
+---
+
+## Fonctionnement
+
+1. **RabbitMQ** reçoit des messages JSON dans une queue (`incoming_texts`) contenant un type (`update`, `delete`) et des données à analyser.
+2. Le **worker Python (asynchrone)** consomme les messages via `aio-pika`.
+3. Le traitement métier (analyse de texte) est exécuté dans un **`ProcessPoolExecutor`** pour ne pas bloquer l'event loop.
+4. Une fois l’analyse terminée, les résultats sont enregistrés dans **MongoDB**.
+5. Un **message final** est publié dans une autre queue RabbitMQ (`processed_texts`).
+
+---
+
+## Execution
+
+---
+
+## Auteur
+
+Mohamed Kone
