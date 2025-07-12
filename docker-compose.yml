@@ -25,8 +25,15 @@ services:
     build: ./worker
     container_name: text_worker
     environment:
+      MAX_CONCURRENT_TASKS: 10
       AMQP_URL: amqp://guest:guest@rabbitmq/
       MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: text_analysis
+      MONGO_COLLECTION: results
+      QUEUE_NAME: incoming_texts
+      OUTPUT_QUEUE: processed_texts
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
     depends_on:
       - rabbitmq
       - mongodb
