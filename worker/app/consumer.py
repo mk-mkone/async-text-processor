@@ -11,6 +11,7 @@ QUEUE_NAME = os.getenv("QUEUE_NAME")
 MAX_CONCURRENT_TASKS = int(os.getenv("MAX_CONCURRENT_TASKS"))
 
 semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)
+active_tasks = set()
 
 async def consume_messages():
     connection = await aio_pika.connect_robust(AMQP_URL)
@@ -22,15 +23,21 @@ async def consume_messages():
 
     async with queue.iterator() as queue_iter:
         async for message in queue_iter:
-            asyncio.create_task(handle_message(message))
+            task = asyncio.create_task(handle_message(message))
+            active_tasks.add(task)
+            task.add_done_callback(active_tasks.discard)
 
 async def handle_message(message: aio_pika.IncomingMessage):
-    async with semaphore:
-        async with message.process():
-            try:
+    try:
+        async with semaphore:
+            async with message.process():
                 raw_data = json.loads(message.body)
                 data = MessageData(raw_data)
                 print(f"[REÇU] {data.msg_id} ({data.type})")
                 await process_message(data)
-            except Exception as e:
-                print(f"Erreur de traitement : {e}")
+    except asyncio.CancelledError:
+        print(f"Traitement annulé pour message : {message!r}")
+        await message.nack(requeue=True)
+    except Exception as e:
+        print(f"Erreur de traitement : {e}")
+        await message.nack(requeue=False)

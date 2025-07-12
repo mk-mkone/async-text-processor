@@ -1,6 +1,6 @@
 import asyncio
 import signal
-from app.consumer import consume_messages
+from app.consumer import consume_messages, active_tasks
 
 shutdown_event = asyncio.Event()
 
@@ -14,11 +14,18 @@ async def main():
     consumer_task = asyncio.create_task(consume_messages())
 
     await shutdown_event.wait()
+    print("Signal reçu. Arrêt demandé..")
+
     consumer_task.cancel()
     try:
         await consumer_task
     except asyncio.CancelledError:
-        print("Task consumer annulée")
+        print("Consommation annulée..")
+
+    print("En attente des tâches restantes..")
+
+    await asyncio.gather(*active_tasks, return_exceptions=True)
+    print("Arrêt terminé.")
 
 if __name__ == "__main__":
     try:
