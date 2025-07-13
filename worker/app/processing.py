@@ -78,6 +78,11 @@ async def process_message(data: MessageData):
         logger.info(f"Message traité : {data.msg_id} (update)")
     elif data.type == "delete":
         await delete_result(data.msg_id)
+        await publish_result({
+            "msg_id": data.msg_id,
+            "type": "delete",
+            "status": "deleted"
+        })
         logger.info(f"Document supprimé : {data.msg_id}")
     else:
         logger.warning(f"Type inconnu : {data.type}")
