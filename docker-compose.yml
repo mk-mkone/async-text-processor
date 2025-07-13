@@ -35,6 +35,9 @@ services:
       OUTPUT_QUEUE: processed_texts
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
+      LOG_FILE: /logs/worker.log
+    volumes:
+      - ./logs:/logs
     depends_on:
       - rabbitmq
       - mongodb

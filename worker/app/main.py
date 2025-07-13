@@ -1,6 +1,10 @@
 import asyncio
 import signal
 from app.consumer import consume_messages, active_tasks
+from core.logging_wrapper import LoggerFactory
+
+LoggerFactory._configure()
+logger = LoggerFactory.get_logger(__name__)
 
 shutdown_event = asyncio.Event()
 
@@ -10,25 +14,26 @@ def setup_signal_handlers():
         loop.add_signal_handler(sig, shutdown_event.set)
 
 async def main():
+    logger.info("Démarrage du worker...")
     setup_signal_handlers()
     consumer_task = asyncio.create_task(consume_messages())
 
     await shutdown_event.wait()
-    print("Signal reçu. Arrêt demandé..")
+    logger.info("Signal reçu. Arrêt demandé..")
 
     consumer_task.cancel()
     try:
         await consumer_task
     except asyncio.CancelledError:
-        print("Consommation annulée..")
+        logger.info("Consommation annulée..")
 
-    print("En attente des tâches restantes..")
+    logger.info("En attente des tâches restantes..")
 
     await asyncio.gather(*active_tasks, return_exceptions=True)
-    print("Arrêt terminé.")
+    logger.info("Arrêt terminé.")
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Interruption via CTRL+C")
+        logger.warning("Interruption via CTRL+C")

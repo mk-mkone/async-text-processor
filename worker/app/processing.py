@@ -8,7 +8,9 @@ from concurrent.futures import ProcessPoolExecutor
 from app.storage import store_result, delete_result
 from app.publisher import publish_result
 from app.models.message_data import MessageData
+from core.logging_wrapper import LoggerFactory
 
+logger = LoggerFactory.get_logger(__name__)
 executor = ProcessPoolExecutor(max_workers=4)
 
 def heavy_analysis(data: MessageData) -> dict:
@@ -40,11 +42,9 @@ async def process_message(data: MessageData):
         result = await loop.run_in_executor(executor, heavy_analysis, data)
         await store_result(result)
         await publish_result(result)
-        print(f"Message traité : {data.msg_id} (update)")
-
+        logger.info(f"Message traité : {data.msg_id} (update)")
     elif data.type == "delete":
         await delete_result(data.msg_id)
-        print(f"Document supprimé : {data.msg_id} (delete)")
-
+        logger.info(f"Document supprimé : {data.msg_id}")
     else:
-        print(f"Type inconnu : {data.type}")
+        logger.warning(f"Type inconnu : {data.type}")

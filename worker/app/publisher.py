@@ -1,6 +1,9 @@
 import aio_pika
 import os
 import json
+from core.logging_wrapper import LoggerFactory
+
+logger = LoggerFactory.get_logger(__name__)
 
 AMQP_URL = os.getenv("AMQP_URL")
 OUTPUT_QUEUE = os.getenv("OUTPUT_QUEUE")
@@ -9,7 +12,6 @@ async def publish_result(result: dict):
     try:
         connection = await aio_pika.connect_robust(AMQP_URL)
         channel = await connection.channel()
-
         await channel.declare_queue(OUTPUT_QUEUE, durable=True)
 
         message = aio_pika.Message(
@@ -23,11 +25,11 @@ async def publish_result(result: dict):
             routing_key=OUTPUT_QUEUE
         )
 
-        print(f"Message publié dans {OUTPUT_QUEUE} : {result.get('msg_id')}")
+        logger.info(f"Message publié dans '{OUTPUT_QUEUE}' : {result.get('msg_id')}")
         await connection.close()
 
     except Exception as e:
-        print(f"Erreur publication message : {e}")
+        logger.error(f"Erreur publication message : {e}")
 
 
 async def republish_with_retries(original_message: aio_pika.IncomingMessage, retries: int):
@@ -45,9 +47,8 @@ async def republish_with_retries(original_message: aio_pika.IncomingMessage, ret
             routing_key=original_message.routing_key
         )
 
-        print(f"Message re-publié (tentative {retries})")
-
+        logger.warning(f"Message re-publié (retry={retries})")
         await connection.close()
 
     except Exception as e:
-        print(f"Re-publication échouée : {e}")
+        logger.error(f"Re-publication échouée : {e}")
