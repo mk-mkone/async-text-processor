@@ -79,19 +79,39 @@ Cette architecture permet d’orchestrer efficacement un flux massif de messages
 
 ```bash
 project/
-├── assets/
+├── assets/                         # Images (schémas, docs, etc.)
 │   └── Parallel_processing.png
-├── docker-compose.yml
-├── worker/
+
+├── docker-compose.yml              # Orchestration des services (RabbitMQ, MongoDB, etc.)
+├── .gitignore                      # Fichiers et dossiers à ignorer par Git
+├── pyproject.toml                  # Config pour black et isort
+├── Makefile                        # Commande utile
+
+├── worker/                         # Service principal : analyse de texte
 │   ├── Dockerfile
 │   ├── .dockerignore
 │   ├── setup.py
 │   ├── requirements.txt
-│   └── app/
-├── .gitignore
-├── loadgen/
-├── tests/
-├── Makefile
+
+│   ├── app/                        # Logique métier
+│   │   ├── consumer.py
+│   │   ├── main.py
+│   │   ├── processing.py
+│   │   ├── publisher.py
+│   │   ├── storage.py
+│   │   └── models/
+│   │       └── message_data.py
+
+│   └── core/                       # Utilitaires techniques
+│       └── logging_wrapper.py
+
+├── loadgen/                        # Générateur de charge RabbitMQ
+│   ├── loadgen.py
+│   ├── config.yaml
+│   └── ...
+
+├── logs/                           # Fichiers log montés via volume
+
 
 ```
 
@@ -108,6 +128,74 @@ project/
 ---
 
 ## Execution
+
+### 1. Pré-requis
+
+Assurez-vous d’avoir :
+
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+- (Optionnel) `make`, sinon utilisez les commandes manuelles
+
+---
+
+### 2. Lancement des services
+
+Depuis la racine du projet :
+
+```bash
+make build
+make up
+```
+Ou manuellement :
+```bash
+docker-compose up
+docker-compose up -d
+```
+
+
+Cela démarre :
+- RabbitMQ + management UI (http://localhost:15672)
+- MongoDB
+- Worker d’analyse de texte
+
+> Identifiants RabbitMQ (par défaut) :
+> ```
+> user: guest
+> pass: guest
+> ```
+
+---
+
+### Logs
+
+Les logs du worker sont disponibles :
+
+- **Dans le terminal** :
+  ```bash
+  make logs
+  ```
+
+- **Dans un fichier monté** (avec rotation) :
+  ```
+  logs/worker.log
+  ```
+
+---
+
+## Arrêt propre
+
+```bash
+make stop
+```
+
+Ou manuellement :
+
+```bash
+docker-compose down
+```
+
+> Le worker attend la fin des tâches en cours avant de se terminer
 
 ---
 
