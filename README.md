@@ -167,6 +167,85 @@ Cela démarre :
 
 ---
 
+
+# Générateur de charge — `loadgen/`
+
+Ce module permet de simuler l’envoi massif de messages vers **RabbitMQ** ou **MongoDB** pour tester les performances du système d’analyse de texte.
+
+---
+
+## Structure
+
+| Fichier              | Rôle                                                           |
+|----------------------|----------------------------------------------------------------|
+| `main.py`            | Point d'entrée CLI pour choisir la cible (`rabbit` ou `mongo`) |
+| `rabbit_sender.py`   | Génère des messages `update` / `delete` dans RabbitMQ          |
+| `mongo_sender.py`    | Insère directement des documents fictifs dans MongoDB          |
+| `config.yaml`        | Fichier de configuration pour les volumes et la cible          |
+| `requirements.txt`   | Dépendances Python nécessaires                                 |
+
+---
+
+## Préparation
+
+1. Créer un environnement virtuel :
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+2. Installer les dépendances :
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Configuration
+
+Ouvre et modifie le fichier `config.yaml` :
+
+```yaml
+cible: rabbit   # 'rabbit' ou 'mongo'
+count: 20000    # nombre total de messages à générer
+type: update    # messages 'update' ou 'delete'
+```
+
+---
+
+## Utilisation
+
+### Pour injecter dans RabbitMQ :
+
+```bash
+python main.py
+```
+
+Publie des messages de type `update` ou `delete` dans la queue `incoming_texts`.
+
+---
+
+### Pour remplir directement MongoDB :
+
+```bash
+python main.py
+```
+
+Remplit la collection MongoDB avec des documents aléatoires simulant des messages.
+
+---
+
+## Conseils
+
+- Lancer `docker-compose up` avant de démarrer `loadgen`.
+- Observer l’effet en temps réel dans :
+  - RabbitMQ ui (`localhost:15672/#/queues`)
+- Vérifier le traitement avec `make logs`.
+
+---
+
 ### Logs
 
 Les logs du worker sont disponibles :
