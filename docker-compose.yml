@@ -26,6 +26,7 @@ services:
     container_name: text_worker
     environment:
       MAX_CONCURRENT_TASKS: 10
+      MAX_RETRIES: 3
       AMQP_URL: amqp://guest:guest@rabbitmq/
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB: text_analysis
