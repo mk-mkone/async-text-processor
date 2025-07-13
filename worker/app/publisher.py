@@ -6,19 +6,28 @@ AMQP_URL = os.getenv("AMQP_URL")
 OUTPUT_QUEUE = os.getenv("OUTPUT_QUEUE")
 
 async def publish_result(result: dict):
-    connection = await aio_pika.connect_robust(AMQP_URL)
-    channel = await connection.channel()
+    try:
+        connection = await aio_pika.connect_robust(AMQP_URL)
+        channel = await connection.channel()
 
-    await channel.declare_queue(OUTPUT_QUEUE, durable=True)
+        await channel.declare_queue(OUTPUT_QUEUE, durable=True)
 
-    message_body = json.dumps(result).encode()
+        message = aio_pika.Message(
+            body=json.dumps(result).encode(),
+            content_type="application/json",
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        )
 
-    await channel.default_exchange.publish(
-        aio_pika.Message(body=message_body),
-        routing_key=OUTPUT_QUEUE
-    )
+        await channel.default_exchange.publish(
+            message,
+            routing_key=OUTPUT_QUEUE
+        )
 
-    await connection.close()
+        print(f"Message publié dans {OUTPUT_QUEUE} : {result.get('msg_id')}")
+        await connection.close()
+
+    except Exception as e:
+        print(f"Erreur publication message : {e}")
 
 
 async def republish_with_retries(original_message: aio_pika.IncomingMessage, retries: int):
