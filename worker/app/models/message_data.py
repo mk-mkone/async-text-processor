@@ -8,6 +8,9 @@ class MessageData:
         text (str) : Contenu textuel à analyser.
         type (str) : Type d’action (update / delete).
         timestamp (str) : Date ISO du message.
+
+    Raises:
+        KeyError: si 'msg_id' ou 'type' sont manquant.
     """
     __slots__ = ("msg_id", "user_id", "text", "type", "timestamp")
 
@@ -18,10 +21,10 @@ class MessageData:
         Args:
             raw_dict (dict): Dictionnaire contenant les données du message.
         """
-        self.msg_id = raw_dict.get("msg_id")
+        self.msg_id = raw_dict["msg_id"]
         self.user_id = raw_dict.get("user_id")
-        self.text = raw_dict.get("text", "")
-        self.type = raw_dict.get("type", "unknown")
+        self.text = raw_dict.get("text")
+        self.type = raw_dict["type"]
         self.timestamp = raw_dict.get("timestamp")
 
     def to_dict(self) -> dict:
