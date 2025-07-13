@@ -9,7 +9,7 @@ from app.storage import store_result, delete_result
 from app.publisher import publish_result
 from app.models.message_data import MessageData
 
-executor = ProcessPoolExecutor()
+executor = ProcessPoolExecutor(max_workers=4)
 
 def heavy_analysis(data: MessageData) -> dict:
     # Simule tache métier avec un délai IO-bound entre 2 et 15 secondes
@@ -37,7 +37,7 @@ def heavy_analysis(data: MessageData) -> dict:
 async def process_message(data: MessageData):
     if data.type == "update":
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, heavy_analysis, data)
+        result = await loop.run_in_executor(executor, heavy_analysis, data)
         await store_result(result)
         await publish_result(result)
         print(f"Message traité : {data.msg_id} (update)")
