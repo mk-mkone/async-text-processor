@@ -1,6 +1,7 @@
 import asyncio
 import signal
-from app.consumer import consume_messages, active_tasks
+
+from app.consumer import active_tasks, consume_messages
 from core.logging_wrapper import LoggerFactory
 
 LoggerFactory._configure()
@@ -8,10 +9,12 @@ logger = LoggerFactory.get_logger(__name__)
 
 shutdown_event = asyncio.Event()
 
+
 def setup_signal_handlers():
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, shutdown_event.set)
+
 
 async def main():
     logger.info("Démarrage du worker...")
@@ -31,6 +34,7 @@ async def main():
 
     await asyncio.gather(*active_tasks, return_exceptions=True)
     logger.info("Arrêt terminé.")
+
 
 if __name__ == "__main__":
     try:

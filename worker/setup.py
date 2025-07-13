@@ -7,6 +7,8 @@ setup(
     install_requires=[
         'aio-pika',
         'motor',
+        'black',
+        'isort',
     ],
     entry_points={
         'console_scripts': [

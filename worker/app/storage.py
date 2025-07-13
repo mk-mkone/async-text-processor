@@ -1,6 +1,7 @@
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from core.logging_wrapper import LoggerFactory
+from motor.motor_asyncio import AsyncIOMotorClient
 
 logger = LoggerFactory.get_logger(__name__)
 
@@ -12,13 +13,11 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
+
 async def store_result(result: dict):
-    await collection.replace_one(
-        {"msg_id": result["msg_id"]},
-        result,
-        upsert=True
-    )
+    await collection.replace_one({"msg_id": result["msg_id"]}, result, upsert=True)
     logger.info(f"Résultat stocké pour {result['msg_id']}")
+
 
 async def delete_result(document_id: str):
     await collection.delete_one({"msg_id": document_id})

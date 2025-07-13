@@ -1,6 +1,6 @@
+import json
 import logging
 import os
-import json
 from logging.handlers import RotatingFileHandler
 
 
@@ -30,13 +30,12 @@ class LoggerFactory:
         if log_format == "json":
             formatter = JsonFormatter()
         else:
-            formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(message)s")
+            formatter = logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+            )
 
         file_handler = RotatingFileHandler(
-            log_file,
-            maxBytes=2 * 1024 * 1024,
-            backupCount=5,
-            encoding="utf-8"
+            log_file, maxBytes=2 * 1024 * 1024, backupCount=5, encoding="utf-8"
         )
         file_handler.setFormatter(formatter)
 
@@ -44,9 +43,7 @@ class LoggerFactory:
         console_handler.setFormatter(formatter)
 
         logging.basicConfig(
-            level=log_level,
-            handlers=[file_handler, console_handler],
-            force=True
+            level=log_level, handlers=[file_handler, console_handler], force=True
         )
 
         cls._configured = True

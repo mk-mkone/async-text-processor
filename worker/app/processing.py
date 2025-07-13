@@ -1,17 +1,17 @@
 import asyncio
-import time
-import random
 import hashlib
-
+import random
+import time
 from concurrent.futures import ProcessPoolExecutor
 
-from app.storage import store_result, delete_result
-from app.publisher import publish_result
 from app.models.message_data import MessageData
+from app.publisher import publish_result
+from app.storage import delete_result, store_result
 from core.logging_wrapper import LoggerFactory
 
 logger = LoggerFactory.get_logger(__name__)
 executor = ProcessPoolExecutor(max_workers=4)
+
 
 def heavy_analysis(data: MessageData) -> dict:
     # Simule tache métier avec un délai IO-bound entre 2 et 15 secondes
@@ -33,15 +33,22 @@ def heavy_analysis(data: MessageData) -> dict:
         "timestamp": data.timestamp,
         "status": "done",
         "duration": duration,
-        "score": score
+        "score": score,
     }
+
 
 async def process_message(data: MessageData):
     if data.type == "update":
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(executor, heavy_analysis, data)
-        store_payload = {k: v for k, v in result.items() if k not in {"type", "status", "duration"}}
-        publish_payload = {k: v for k, v in result.items() if k not in {"user_id", "text", "timestamp", "score"}}
+        store_payload = {
+            k: v for k, v in result.items() if k not in {"type", "status", "duration"}
+        }
+        publish_payload = {
+            k: v
+            for k, v in result.items()
+            if k not in {"user_id", "text", "timestamp", "score"}
+        }
 
         await store_result(store_payload)
         await publish_result(publish_payload)

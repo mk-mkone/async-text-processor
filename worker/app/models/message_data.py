@@ -14,5 +14,5 @@ class MessageData:
             "user_id": self.user_id,
             "text": self.text,
             "type": self.type,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }

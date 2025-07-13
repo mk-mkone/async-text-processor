@@ -26,3 +26,7 @@ logs:
 
 freeze:
 	. venv/bin/activate && pip install worker && pip freeze > worker/requirements.txt
+
+formate:
+	isort worker/app worker/core
+	black worker/app worker/core

@@ -1,12 +1,14 @@
-import aio_pika
-import os
 import json
+import os
+
+import aio_pika
 from core.logging_wrapper import LoggerFactory
 
 logger = LoggerFactory.get_logger(__name__)
 
 AMQP_URL = os.getenv("AMQP_URL")
 OUTPUT_QUEUE = os.getenv("OUTPUT_QUEUE")
+
 
 async def publish_result(result: dict):
     try:
@@ -20,10 +22,7 @@ async def publish_result(result: dict):
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
         )
 
-        await channel.default_exchange.publish(
-            message,
-            routing_key=OUTPUT_QUEUE
-        )
+        await channel.default_exchange.publish(message, routing_key=OUTPUT_QUEUE)
 
         logger.info(f"Message publié dans '{OUTPUT_QUEUE}' : {result.get('msg_id')}")
         await connection.close()
@@ -32,7 +31,9 @@ async def publish_result(result: dict):
         logger.error(f"Erreur publication message : {e}")
 
 
-async def republish_with_retries(original_message: aio_pika.IncomingMessage, retries: int):
+async def republish_with_retries(
+    original_message: aio_pika.IncomingMessage, retries: int
+):
     try:
         connection = await aio_pika.connect_robust(AMQP_URL)
         channel = await connection.channel()
@@ -42,9 +43,9 @@ async def republish_with_retries(original_message: aio_pika.IncomingMessage, ret
                 body=original_message.body,
                 content_type="application/json",
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                headers={**original_message.headers, "x-retries": retries}
+                headers={**original_message.headers, "x-retries": retries},
             ),
-            routing_key=original_message.routing_key
+            routing_key=original_message.routing_key,
         )
 
         logger.warning(f"Message re-publié (retry={retries})")
