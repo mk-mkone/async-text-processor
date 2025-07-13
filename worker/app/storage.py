@@ -10,6 +10,11 @@ db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
 async def store_result(result: dict):
-    result_copy = result.copy()
-    insert_result = await collection.insert_one(result_copy)
-    print(f"Résultat stocké dans MongoDB avec _id={insert_result.inserted_id}")
+    await collection.replace_one(
+        {"msg_id": result["msg_id"]},
+        result,
+        upsert=True
+    )
+
+async def delete_result(document_id: str):
+    await collection.delete_one({"msg_id": document_id})
