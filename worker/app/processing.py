@@ -40,8 +40,11 @@ async def process_message(data: MessageData):
     if data.type == "update":
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(executor, heavy_analysis, data)
-        await store_result(result)
-        await publish_result(result)
+        store_payload = {k: v for k, v in result.items() if k not in {"type", "status", "duration"}}
+        publish_payload = {k: v for k, v in result.items() if k not in {"user_id", "text", "timestamp", "score"}}
+
+        await store_result(store_payload)
+        await publish_result(publish_payload)
         logger.info(f"Message traité : {data.msg_id} (update)")
     elif data.type == "delete":
         await delete_result(data.msg_id)
