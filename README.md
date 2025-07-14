@@ -167,7 +167,28 @@ Cela démarre :
 > ```
 
 ---
+### 3. Structure message attendu
 
+```json lines
+{
+  'id': 'msg_158',
+  'user_id': 'u_2301322',
+  'text': 'texts',
+  'timestamp': '2025-07-06T13:35:15.598473',
+  'type': 'update'
+}
+```
+
+En cas de `update`, les champs suivants sont optionnels : 
+- user_id
+- timestamp
+
+En cas de `delete`, les champs suivants sont optionnels : 
+- user_id
+- text
+- timestamp
+
+---
 
 # Générateur de charge — `loadgen/`
 
@@ -201,6 +222,7 @@ Ce module permet de simuler l’envoi massif de messages vers **RabbitMQ** ou **
 1. Créer un environnement virtuel :
 
 ```bash
+cd loadgen
 python3 -m venv venv
 source venv/bin/activate
 ```
