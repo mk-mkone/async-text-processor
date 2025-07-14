@@ -19,7 +19,7 @@ Mettre en place un système distribué capable de :
 | **MongoDB**           | Base de données NoSQL pour stocker les résultats    |
 | **motor**             | Client MongoDB asynchrone pour Python               |
 | **Docker Compose**    | Orchestration locale de tous les services           |
-| **loadgen**           | Générateur de messages pour tests de charge         |
+| **loadgen**           | Générateur de messages pour tests                   |
 
 ---
 
@@ -106,7 +106,7 @@ project/
 │       └── logging_wrapper.py
 
 ├── loadgen/                        # Générateur de charge RabbitMQ
-│   ├── loadgen.py
+│   ├── main.py
 │   ├── config.yaml
 │   └── ...
 
@@ -124,6 +124,7 @@ project/
 3. Le traitement métier (analyse de texte) est exécuté dans un **`ProcessPoolExecutor`** pour ne pas bloquer l'event loop.
 4. Une fois l’analyse terminée, les résultats sont enregistrés dans **MongoDB**.
 5. Un **message final** est publié dans une autre queue RabbitMQ (`processed_texts`).
+6. En cas d'échec de traitement d'un message, il sera publié dans (`failed_texts`) avec **dead-letter exchange**
 
 ---
 
@@ -186,6 +187,15 @@ Ce module permet de simuler l’envoi massif de messages vers **RabbitMQ** ou **
 
 ---
 
+## Conseils
+
+- Lancer `docker-compose up` avant de démarrer `loadgen`.
+- Observer l’effet en temps réel dans :
+  - RabbitMQ ui (`localhost:15672/#/queues`)
+- Vérifier le traitement avec `make logs`.
+
+---
+
 ## Préparation
 
 1. Créer un environnement virtuel :
@@ -208,9 +218,9 @@ pip install -r requirements.txt
 Ouvre et modifie le fichier `config.yaml` :
 
 ```yaml
-cible: rabbit   # 'rabbit' ou 'mongo'
-count: 20000    # nombre total de messages à générer
-type: update    # messages 'update' ou 'delete'
+cible: rabbit         # 'rabbit' ou 'mongo'
+count: 20000          # nombre total de messages à générer
+update_ratio: 0.75    # ratio pour faire varier update et delete
 ```
 
 ---
@@ -234,15 +244,6 @@ python main.py
 ```
 
 Remplit la collection MongoDB avec des documents aléatoires simulant des messages.
-
----
-
-## Conseils
-
-- Lancer `docker-compose up` avant de démarrer `loadgen`.
-- Observer l’effet en temps réel dans :
-  - RabbitMQ ui (`localhost:15672/#/queues`)
-- Vérifier le traitement avec `make logs`.
 
 ---
 
