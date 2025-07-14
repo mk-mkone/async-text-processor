@@ -171,11 +171,11 @@ Cela démarre :
 
 ```json lines
 {
-  'id': 'msg_158',
-  'user_id': 'u_2301322',
-  'text': 'texts',
-  'timestamp': '2025-07-06T13:35:15.598473',
-  'type': 'update'
+  "id": "msg_158",
+  "user_id": "u_2301322",
+  "text": "texts",
+  "timestamp": "2025-07-06T13:35:15.598473",
+  "type": "update"
 }
 ```
 
