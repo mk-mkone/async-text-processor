@@ -38,7 +38,7 @@ def heavy_analysis(data: MessageData) -> dict:
     text_hash = int(hashlib.md5(data.text.encode()).hexdigest(), 16)
     score = text_hash % 100
 
-    return {
+    result =  {
         "msg_id": data.msg_id,
         "user_id": data.user_id,
         "text": data.text,
@@ -49,6 +49,8 @@ def heavy_analysis(data: MessageData) -> dict:
         "score": score,
     }
 
+    result.update(data.get_extra())
+    return result
 
 async def process_message(data: MessageData):
     """
@@ -68,9 +70,8 @@ async def process_message(data: MessageData):
             k: v for k, v in result.items() if k not in {"type", "status", "duration"}
         }
         publish_payload = {
-            k: v
-            for k, v in result.items()
-            if k not in {"user_id", "text", "timestamp", "score"}
+            k: v for k, v in result.items() if k in {"msg_id", "type", "status"}
+
         }
 
         await store_result(store_payload)
