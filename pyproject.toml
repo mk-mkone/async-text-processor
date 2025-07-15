@@ -1,5 +1,5 @@
 [tool.isort]
 profile = "black"
 line_length = 88
-known_first_party = ["worker.app", "worker.core"]
+known_first_party = ["worker.app", "worker.core", "worker.tests"]
 skip = [".venv", "dist", "build"]

@@ -91,7 +91,9 @@ project/
 │   ├── Dockerfile
 │   ├── .dockerignore
 │   ├── setup.py
+│   ├── pytest.ini
 │   ├── requirements.txt
+│   ├── requirements-test.txt
 
 │   ├── app/                        # Logique métier
 │   │   ├── consumer.py
@@ -104,6 +106,14 @@ project/
 
 │   └── core/                       # Utilitaires techniques
 │       └── logging_wrapper.py
+
+│   └── tests/                      # Tests du code
+│       └── test_delete_process.py
+│       └── test_message_data.py
+│       └── test_message_data_errors.py
+│       └── test_processing.py
+│       └── test_publisher.py
+│       └── test_update_process.py
 
 ├── loadgen/                        # Générateur de charge RabbitMQ
 │   ├── main.py
@@ -150,7 +160,7 @@ make up
 ```
 Ou manuellement :
 ```bash
-docker-compose up
+docker-compose build
 docker-compose up -d
 ```
 
@@ -254,6 +264,9 @@ update_ratio: 0.75    # ratio pour faire varier update et delete
 ```bash
 python main.py
 ```
+```yaml
+cible: rabbit
+```
 
 Publie des messages de type `update` ou `delete` dans la queue `incoming_texts`.
 
@@ -264,7 +277,9 @@ Publie des messages de type `update` ou `delete` dans la queue `incoming_texts`.
 ```bash
 python main.py
 ```
-
+```yaml
+cible: mongo
+```
 Remplit la collection MongoDB avec des documents aléatoires simulant des messages.
 
 ---
@@ -298,6 +313,31 @@ docker-compose down
 ```
 
 > Le worker attend la fin des tâches en cours avant de se terminer
+
+---
+
+# Tests unitaire
+
+Le projet utilise `pytest` pour les tests unitaires.
+
+---
+
+## Exécuter les tests
+
+Assurez-vous d’avoir activé votre environnement virtuel :
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -e worker
+pip install -r worker/requirements-test.txt
+```
+
+Puis exécutez les tests :
+
+```bash
+make test
+```
 
 ---
 

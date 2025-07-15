@@ -25,7 +25,7 @@ class LoggerFactory:
 
         log_level = os.getenv("LOG_LEVEL", "INFO").upper()
         log_format = os.getenv("LOG_FORMAT", "text").lower()
-        log_file = os.getenv("LOG_FILE")
+        log_file = os.getenv("LOG_FILE", "logs/worker.log")
 
         if log_format == "json":
             formatter = JsonFormatter()
