@@ -33,3 +33,5 @@ formate:
 
 test:
 	pytest
+
+.PHONY: logs
