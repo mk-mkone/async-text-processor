@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import random
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -35,10 +34,12 @@ def heavy_analysis(data: MessageData) -> dict:
     _ = sum(i * i for i in range(10_000))
 
     # Scoring factice
-    text_hash = int(hashlib.md5(data.text.encode()).hexdigest(), 16)
-    score = text_hash % 100
+    if data.text:
+        score = hash(data.text) % 100
+    else:
+        score = None
 
-    result =  {
+    result = {
         "msg_id": data.msg_id,
         "user_id": data.user_id,
         "text": data.text,
@@ -51,6 +52,7 @@ def heavy_analysis(data: MessageData) -> dict:
 
     result.update(data.get_extra())
     return result
+
 
 async def process_message(data: MessageData):
     """
@@ -71,7 +73,6 @@ async def process_message(data: MessageData):
         }
         publish_payload = {
             k: v for k, v in result.items() if k in {"msg_id", "type", "status"}
-
         }
 
         await store_result(store_payload)
@@ -79,11 +80,9 @@ async def process_message(data: MessageData):
         logger.info(f"Message traité : {data.msg_id} (update)")
     elif data.type == "delete":
         await delete_result(data.msg_id)
-        await publish_result({
-            "msg_id": data.msg_id,
-            "type": "delete",
-            "status": "deleted"
-        })
+        await publish_result(
+            {"msg_id": data.msg_id, "type": "delete", "status": "deleted"}
+        )
         logger.info(f"Document supprimé : {data.msg_id}")
     else:
         logger.warning(f"Type inconnu : {data.type}")

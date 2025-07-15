@@ -13,6 +13,7 @@ class MessageData:
     Raises:
         KeyError: si 'msg_id' ou 'type' sont manquant.
     """
+
     __slots__ = ("msg_id", "user_id", "text", "type", "timestamp", "_extra")
 
     def __init__(self, raw_dict: dict):
