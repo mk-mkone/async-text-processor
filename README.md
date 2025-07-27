@@ -1,93 +1,93 @@
-# Analyseur de texte distribué
+# Distributed Text Analyzer
 
-## Objectif
+## Objective
 
-Mettre en place un système distribué capable de :
+Set up a distributed system capable of:
 
-* Consommer efficacement un grand volume de messages RabbitMQ.
-* Traiter chaque message avec une tâche métier lourde (analyse de texte).
-* Stocker les résultats dans MongoDB.
-* Réémettre un message final une fois le traitement terminé.
-* Tester la charge avec un simulateur
+* Efficiently consuming a high volume of RabbitMQ messages.
+* Processing each message with a heavy business task (text analysis).
+* Storing results in MongoDB.
+* Emitting a final message once processing is complete.
+* Testing load with a simulator.
 
-## Stack technique
+## Tech Stack
 
-| Composant             | Rôle                                                |
-|-----------------------|-----------------------------------------------------|
-| **RabbitMQ**          | Broker de messages AMQP pour ingestion des messages |
-| **aio-pika**          | Client Python asynchrone pour RabbitMQ              |
-| **MongoDB**           | Base de données NoSQL pour stocker les résultats    |
-| **motor**             | Client MongoDB asynchrone pour Python               |
-| **Docker Compose**    | Orchestration locale de tous les services           |
-| **loadgen**           | Générateur de messages pour tests                   |
+| Component            | Role                                                        |
+|----------------------|-------------------------------------------------------------|
+| **RabbitMQ**         | AMQP message broker for message ingestion                   |
+| **aio-pika**         | Asynchronous Python client for RabbitMQ                     |
+| **MongoDB**          | NoSQL database for storing results                          |
+| **motor**            | Asynchronous MongoDB client for Python                      |
+| **Docker Compose**   | Local orchestration of all services                         |
+| **loadgen**          | Message generator for testing                               |
 
 ---
 
-## Justification des choix techniques
+## Technical Choices Justification
 
-### Pourquoi `aio-pika` ?
+### Why `aio-pika`?
 
-* Client AMQP asynchrone : idéal pour les systèmes `asyncio`
-* Permet une consommation non bloquante des messages RabbitMQ
-* Plus simple et plus moderne que `pika` synchrone
-* Plus simple à scaler dans une boucle event-based que `pika`
-* Gère reconnect, QoS, ack explicites, publication, etc.
-* Compatible avec le traitement asynchrone + ProcessPoolExecutor
+* Asynchronous AMQP client: ideal for `asyncio` systems
+* Enables non-blocking RabbitMQ message consumption
+* Simpler and more modern than synchronous `pika`
+* Easier to scale in an event-loop-based architecture
+* Handles reconnects, QoS, explicit acks, publishing, etc.
+* Compatible with asynchronous processing + ProcessPoolExecutor
 
-### Pourquoi `motor` ?
+### Why `motor`?
 
-* Driver officiel MongoDB asynchrone
-* Parfait pour insérer / mettre à jour des documents sans bloquer
-* S’intègre nativement avec `asyncio`, compatible avec `aio-pika`
-* Plus performant que `pymongo` dans des applications concurrentes
+* Official asynchronous MongoDB driver
+* Perfect for inserting/updating documents without blocking
+* Integrates natively with `asyncio`, compatible with `aio-pika`
+* More performant than `pymongo` in concurrent applications
 
-Ces deux choix permettent de traiter efficacement des messages en continu, gèrent bien la montée en charge et (point de vue personnel) ne bloquent jamais **inutilement** la boucle d'événements.
+These two choices allow efficient continuous message processing, scale well, and avoid **unnecessary** event loop blocking.
 
-### Pourquoi `asyncio` + `ProcessPoolExecutor` ?
+### Why `asyncio` + `ProcessPoolExecutor`?
 
-* `asyncio` permet d’orchestrer efficacement un flux continu de messages et d’opérations I/O (MongoDB, RabbitMQ) sans bloquer
-* Idéal pour une architecture réactive, événementielle et faiblement consommatrice de threads
-* `ProcessPoolExecutor` permet d’exécuter en parallèle des traitements **CPU-bound** (ex. : scoring, NLP, parsing)
-* Combine le meilleur des deux mondes : réactivité non bloquante + puissance de calcul parallèle
-* Permet de découpler la logique métier lourde du flux principal, sans impacter la performance globale
+* `asyncio` efficiently orchestrates continuous message flow and I/O operations (MongoDB, RabbitMQ) without blocking
+* Ideal for reactive, event-driven architectures with low thread consumption
+* `ProcessPoolExecutor` allows running **CPU-bound** tasks in parallel (e.g., scoring, NLP, parsing)
+* Best of both worlds: non-blocking reactivity + parallel computation power
+* Decouples heavy business logic from main flow without hurting overall performance
 
-Cette architecture permet d’orchestrer efficacement un flux massif de messages RabbitMQ tout en traitant en parallèle des tâches métier lourdes.
+This architecture efficiently handles a high-throughput RabbitMQ message stream while processing heavy business logic in parallel.
 
-* `asyncio` gère les opérations non bloquantes : consommation RabbitMQ, insertion MongoDB, publication, etc.
-* Les tâches CPU-intensives sont déléguées à des workers via `ProcessPoolExecutor`, libérant ainsi la boucle d’événements principale.
+* `asyncio` handles non-blocking operations: RabbitMQ consumption, MongoDB insertion, publishing, etc.
+* CPU-intensive tasks are offloaded to worker processes via `ProcessPoolExecutor`, freeing the main event loop.
 
 ![Architecture asyncio + ProcessPoolExecutor](./assets/Parallel_processing.png)
 
 ---
 
-## Modules du projet
+## Project Modules
 
-### 1. `worker/` — Service d’analyse principal
+### 1. `worker/` — Main analysis service
 
-* `aio-pika` pour la consommation RabbitMQ
-* `motor` pour la persistance MongoDB
-* `ProcessPoolExecutor` pour le traitement CPU-bound
-* Publication d’un message traité (file `processed_texts`)
+* `aio-pika` for RabbitMQ consumption
+* `motor` for MongoDB persistence
+* `ProcessPoolExecutor` for CPU-bound processing
+* Publishes processed message to `processed_texts` queue
 
-### 2. `loadgen/` — Simulateur de charge
+### 2. `loadgen/` — Load simulator
 
-* Génère un volume massif de messages `update` ou `delete`
+* Generates a massive volume of `update` or `delete` messages
 
 ---
 
-## Structure du projet
+## Project Structure
 
 ```bash
 project/
-├── assets/                         # Images (schémas, docs, etc.)
+├── assets/                         # Images (diagrams, docs, etc.)
 │   └── Parallel_processing.png
 
-├── docker-compose.yml              # Orchestration des services (RabbitMQ, MongoDB, etc.)
-├── .gitignore                      # Fichiers et dossiers à ignorer par Git
-├── pyproject.toml                  # Config pour black et isort
-├── Makefile                        # Commande utile
+├── docker-compose.yml              # Service orchestration (RabbitMQ, MongoDB, etc.)
+├── .gitignore                      # Git-ignored files and folders
+├── pyproject.toml                  # Config for black and isort
+├── Makefile                        # Useful commands
 
-├── worker/                         # Service principal : analyse de texte
+├── worker/                         # Main text analysis service
 │   ├── Dockerfile
 │   ├── .dockerignore
 │   ├── setup.py
@@ -95,7 +95,7 @@ project/
 │   ├── requirements.txt
 │   ├── requirements-test.txt
 
-│   ├── app/                        # Logique métier
+│   ├── app/                        # Business logic
 │   │   ├── consumer.py
 │   │   ├── main.py
 │   │   ├── processing.py
@@ -104,10 +104,10 @@ project/
 │   │   └── models/
 │   │       └── message_data.py
 
-│   └── core/                       # Utilitaires techniques
+│   └── core/                       # Utility tools
 │       └── logging_wrapper.py
 
-│   └── tests/                      # Tests du code
+│   └── tests/                      # Unit tests
 │       └── test_delete_process.py
 │       └── test_message_data.py
 │       └── test_message_data_errors.py
@@ -115,71 +115,71 @@ project/
 │       └── test_publisher.py
 │       └── test_update_process.py
 
-├── loadgen/                        # Générateur de charge RabbitMQ
+├── loadgen/                        # RabbitMQ load generator
 │   ├── main.py
 │   ├── config.yaml
 │   └── ...
 
-├── logs/                           # Fichiers log montés via volume
-
-
+├── logs/                           # Mounted log files via volume
 ```
 
 ---
 
-## Fonctionnement
+## How It Works
 
-1. **RabbitMQ** reçoit des messages JSON dans une queue (`incoming_texts`) contenant un type (`update`, `delete`) et des données à analyser.
-2. Le **worker Python (asynchrone)** consomme les messages via `aio-pika`.
-3. Le traitement métier (analyse de texte) est exécuté dans un **`ProcessPoolExecutor`** pour ne pas bloquer l'event loop.
-4. Une fois l’analyse terminée, les résultats sont enregistrés dans **MongoDB**.
-5. Un **message final** est publié dans une autre queue RabbitMQ (`processed_texts`).
-6. En cas d'échec de traitement d'un message, il sera publié dans (`failed_texts`) avec **dead-letter exchange**
+1. **RabbitMQ** receives JSON messages in a queue (`incoming_texts`) with a `type` (`update`, `delete`) and data to analyze.
+2. The **Python worker (async)** consumes messages using `aio-pika`.
+3. Business logic (text analysis) is run in a **`ProcessPoolExecutor`** to keep the event loop non-blocking.
+4. After analysis, results are stored in **MongoDB**.
+5. A **final message** is published to another RabbitMQ queue (`processed_texts`).
+6. If message processing fails, it is routed to (`failed_texts`) via **dead-letter exchange**.
 
 ---
 
 ## Execution
 
-### 1. Pré-requis
+### 1. Prerequisites
 
-Assurez-vous d’avoir :
+Make sure you have:
 
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
-- (Optionnel) `make`, sinon utilisez les commandes manuelles
+- (Optional) `make`, or use manual commands
 
 ---
 
-### 2. Lancement des services
+### 2. Launch Services
 
-Depuis la racine du projet :
+From project root:
 
 ```bash
 make build
 make up
 ```
-Ou manuellement :
+
+Or manually:
+
 ```bash
 docker-compose build
 docker-compose up -d
 ```
 
-
-Cela démarre :
+This will start:
 - RabbitMQ + management UI (http://localhost:15672)
 - MongoDB
-- Worker d’analyse de texte
+- Text analysis worker
 
-> Identifiants RabbitMQ (par défaut) :
+> RabbitMQ default credentials:
 > ```
 > user: guest
 > pass: guest
 > ```
 
 ---
-### 3. Structure message attendu
 
-```json lines
+### 3. Expected Message Format
+
+```json
 {
   "id": "msg_158",
   "user_id": "u_2301322",
@@ -189,47 +189,47 @@ Cela démarre :
 }
 ```
 
-En cas de `update`, les champs suivants sont optionnels : 
+For `update`, the following fields are optional:
 - user_id
 - timestamp
 
-En cas de `delete`, les champs suivants sont optionnels : 
+For `delete`, the following fields are optional:
 - user_id
 - text
 - timestamp
 
 ---
 
-# Générateur de charge — `loadgen/`
+# Load Generator — `loadgen/`
 
-Ce module permet de simuler l’envoi massif de messages vers **RabbitMQ** ou **MongoDB** pour tester les performances du système d’analyse de texte.
+This module simulates sending a large number of messages to **RabbitMQ** or **MongoDB** to test system performance.
 
 ---
 
 ## Structure
 
-| Fichier              | Rôle                                                           |
-|----------------------|----------------------------------------------------------------|
-| `main.py`            | Point d'entrée CLI pour choisir la cible (`rabbit` ou `mongo`) |
-| `rabbit_sender.py`   | Génère des messages `update` / `delete` dans RabbitMQ          |
-| `mongo_sender.py`    | Insère directement des documents fictifs dans MongoDB          |
-| `config.yaml`        | Fichier de configuration pour les volumes et la cible          |
-| `requirements.txt`   | Dépendances Python nécessaires                                 |
+| File                | Role                                                               |
+|---------------------|--------------------------------------------------------------------|
+| `main.py`           | CLI entry point to choose target (`rabbit` or `mongo`)             |
+| `rabbit_sender.py`  | Sends `update` / `delete` messages to RabbitMQ                     |
+| `mongo_sender.py`   | Inserts fake documents directly into MongoDB                       |
+| `config.yaml`       | Configuration file for volume and target                           |
+| `requirements.txt`  | Required Python dependencies                                       |
 
 ---
 
-## Conseils
+## Tips
 
-- Lancer `docker-compose up` avant de démarrer `loadgen`.
-- Observer l’effet en temps réel dans :
-  - RabbitMQ ui (`localhost:15672/#/queues`)
-- Vérifier le traitement avec `make logs`.
+- Run `docker-compose up` before launching `loadgen`.
+- Monitor in real time via:
+  - RabbitMQ UI (`localhost:15672/#/queues`)
+- Use `make logs` to check processing.
 
 ---
 
-## Préparation
+## Setup
 
-1. Créer un environnement virtuel :
+1. Create a virtual environment:
 
 ```bash
 cd loadgen
@@ -237,7 +237,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-2. Installer les dépendances :
+2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -247,19 +247,19 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Ouvre et modifie le fichier `config.yaml` :
+Edit the `config.yaml` file:
 
 ```yaml
-cible: rabbit         # 'rabbit' ou 'mongo'
-count: 20000          # nombre total de messages à générer
-update_ratio: 0.75    # ratio pour faire varier update et delete
+cible: rabbit         # 'rabbit' or 'mongo'
+count: 20000          # total number of messages to generate
+update_ratio: 0.75    # ratio between update and delete messages
 ```
 
 ---
 
-## Utilisation
+## Usage
 
-### Pour injecter dans RabbitMQ :
+### To inject into RabbitMQ:
 
 ```bash
 python main.py
@@ -268,11 +268,11 @@ python main.py
 cible: rabbit
 ```
 
-Publie des messages de type `update` ou `delete` dans la queue `incoming_texts`.
+Sends `update` or `delete` messages to the `incoming_texts` queue.
 
 ---
 
-### Pour remplir directement MongoDB :
+### To populate MongoDB directly:
 
 ```bash
 python main.py
@@ -280,51 +280,52 @@ python main.py
 ```yaml
 cible: mongo
 ```
-Remplit la collection MongoDB avec des documents aléatoires simulant des messages.
+
+Populates MongoDB with fake documents simulating messages.
 
 ---
 
 ### Logs
 
-Les logs du worker sont disponibles :
+Worker logs are available:
 
-- **Dans le terminal** :
+- **In the terminal**:
   ```bash
   make logs
   ```
 
-- **Dans un fichier monté** (avec rotation) :
+- **In mounted file** (with rotation):
   ```
   logs/worker.log
   ```
 
 ---
 
-## Arrêt propre
+## Graceful Shutdown
 
 ```bash
 make stop
 ```
 
-Ou manuellement :
+Or manually:
 
 ```bash
 docker-compose down
 ```
 
-> Le worker attend la fin des tâches en cours avant de se terminer
+> The worker waits for ongoing tasks to finish before exiting.
 
 ---
 
-# Tests unitaire
+# Unit Tests
 
-Le projet utilise `pytest` pour les tests unitaires.
+The project uses `pytest` for unit testing.
 
 ---
 
-## Exécuter les tests
+## Run the Tests
 
-Assurez-vous d’avoir activé votre environnement virtuel :
+Make sure you have activated your virtual environment:
 
 ```bash
 python3 -m venv venv
@@ -333,7 +334,7 @@ pip install -e worker
 pip install -r worker/requirements-test.txt
 ```
 
-Puis exécutez les tests :
+Then run the tests:
 
 ```bash
 make test
@@ -341,6 +342,6 @@ make test
 
 ---
 
-## Auteur
+## Author
 
 Mohamed Kone

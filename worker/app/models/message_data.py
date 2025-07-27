@@ -1,27 +1,27 @@
 class MessageData:
     """
-    Représente un message structuré à traiter dans le worker.
+    Represents a structured message to be processed by the worker.
 
-    Attributs :
-        msg_id (str) : ID unique du message.
-        user_id (str) : ID utilisateur émetteur.
-        text (str) : Contenu textuel à analyser.
-        type (str) : Type d’action (update / delete).
-        timestamp (str) : Date ISO du message.
-        _extra (dict) : Champs supplémentaires.
+    Attributes:
+        msg_id (str): Unique message ID.
+        user_id (str): ID of the emitting user.
+        text (str): Text content to analyze.
+        type (str): Action type (update / delete).
+        timestamp (str): ISO timestamp of the message.
+        _extra (dict): Additional unexpected fields.
 
     Raises:
-        KeyError: si 'msg_id' ou 'type' sont manquant.
+        KeyError: If 'msg_id' or 'type' are missing from the input.
     """
 
     __slots__ = ("msg_id", "user_id", "text", "type", "timestamp", "_extra")
 
     def __init__(self, raw_dict: dict):
         """
-        Initialise un objet MessageData à partir d’un dictionnaire brut.
+        Initializes a MessageData object from a raw dictionary.
 
         Args:
-            raw_dict (dict): Dictionnaire contenant les données du message.
+            raw_dict (dict): Dictionary containing the message data.
         """
         self.msg_id = raw_dict["msg_id"]
         self.user_id = raw_dict.get("user_id")
@@ -35,13 +35,13 @@ class MessageData:
 
     def to_dict(self, include_extra: bool = True) -> dict:
         """
-        Convertit l’objet en dictionnaire natif.
+        Converts the object into a native dictionary.
 
         Args:
-            include_extra (bool): Si False, n'inclut pas les champs `_extra`.
+            include_extra (bool): If False, excludes `_extra` fields.
 
         Returns:
-            dict: Représentation standard du message.
+            dict: Standard dictionary representation of the message.
         """
         base = {
             "msg_id": self.msg_id,
@@ -57,9 +57,9 @@ class MessageData:
 
     def get_extra(self) -> dict:
         """
-        Retourne les champs supplémentaires non attendus.
+        Returns any additional unexpected fields.
 
         Returns:
-            dict: Champs inconnus.
+            dict: Extra/unexpected fields.
         """
         return self._extra

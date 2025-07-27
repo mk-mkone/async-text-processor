@@ -12,10 +12,10 @@ OUTPUT_QUEUE = os.getenv("OUTPUT_QUEUE")
 
 async def publish_result(result: dict):
     """
-    Publie le résultat final dans la file `processed_texts`.
+    Publishes the final result to the `processed_texts` queue.
 
     Args:
-        result (dict): Résultat à envoyer dans RabbitMQ.
+        result (dict): Result to send to RabbitMQ.
     """
     try:
         connection = await aio_pika.connect_robust(AMQP_URL)
@@ -41,11 +41,11 @@ async def republish_with_retries(
     original_message: aio_pika.IncomingMessage, retries: int
 ):
     """
-    Republie un message dans RabbitMQ avec un compteur de retry incrémenté.
+    Republishes a message to RabbitMQ with an incremented retry counter.
 
     Args:
-        original_message (aio_pika.IncomingMessage): Message original à republier.
-        retries (int): Nombre actuel de tentatives.
+        original_message (aio_pika.IncomingMessage): The original message to republish.
+        retries (int): Current retry count.
     """
     try:
         connection = await aio_pika.connect_robust(AMQP_URL)

@@ -16,10 +16,10 @@ collection = db[COLLECTION_NAME]
 
 async def store_result(result: dict):
     """
-    Insère ou met à jour un document dans MongoDB.
+    Inserts or updates a document in MongoDB.
 
     Args:
-        result (dict): Résultat à stocker, indexé par `msg_id`.
+        result (dict): Result to be stored, indexed by `msg_id`.
     """
     await collection.replace_one({"msg_id": result["msg_id"]}, result, upsert=True)
     logger.info(f"Résultat stocké pour {result['msg_id']}")
@@ -27,10 +27,10 @@ async def store_result(result: dict):
 
 async def delete_result(document_id: str):
     """
-    Supprime un document de MongoDB en fonction de son ID.
+    Deletes a document from MongoDB based on its ID.
 
     Args:
-        document_id (str): L'identifiant `msg_id` à supprimer.
+        document_id (str): The `msg_id` identifier to delete.
     """
     await collection.delete_one({"msg_id": document_id})
     logger.info(f"Résultat supprimé pour {document_id}")

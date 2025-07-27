@@ -21,10 +21,10 @@ active_tasks = set()
 
 async def consume_messages():
     """
-    Consomme les messages de la file RabbitMQ de façon asynchrone.
+    Asynchronously consumes messages from a RabbitMQ queue.
 
-    - Crée la queue principale et la dead-letter queue.
-    - Lance une tâche asynchrone pour chaque message reçu.
+    - Creates the main queue and the dead-letter queue.
+    - Launches an asynchronous task for each received message.
     """
     connection = await aio_pika.connect_robust(AMQP_URL)
     channel = await connection.channel()
@@ -58,15 +58,15 @@ async def consume_messages():
 
 async def handle_message(message: aio_pika.IncomingMessage):
     """
-    Gère un message unique en le traitant selon son type.
+    Handles a single message by processing it based on its type.
 
-    - Désérialise le corps JSON du message.
-    - Transforme en objet `MessageData`.
-    - Passe le message à `process_message()`.
-    - Gère les erreurs, retry, DLQ si MAX_RETRIES atteint.
+    - Deserializes the message body from JSON.
+    - Converts it to a `MessageData` object.
+    - Sends the message to `process_message()`.
+    - Manages errors, retries, and DLQ if MAX_RETRIES is reached.
 
     Args:
-        message (aio_pika.IncomingMessage): Le message reçu depuis RabbitMQ.
+        message (aio_pika.IncomingMessage): The message received from RabbitMQ.
     """
     try:
         async with semaphore:

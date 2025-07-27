@@ -12,9 +12,9 @@ shutdown_event = asyncio.Event()
 
 def setup_signal_handlers():
     """
-    Configure les gestionnaires de signaux (SIGINT, SIGTERM).
+    Configure signal handlers for SIGINT and SIGTERM.
 
-    Déclenche un arrêt propre en posant l'événement asyncio.
+    Triggers a graceful shutdown by setting an asyncio event.
     """
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -23,12 +23,12 @@ def setup_signal_handlers():
 
 async def main():
     """
-    Point d'entrée principal du worker asynchrone.
+    Main entry point of the asynchronous worker.
 
-    - Lance la consommation des messages.
-    - Attend un signal d’arrêt.
-    - Annule la tâche de consommation.
-    - Attend les tâches actives restantes avant de quitter.
+    - Starts consuming messages.
+    - Waits for a shutdown signal.
+    - Cancels the consumption task.
+    - Waits for any remaining active tasks to complete.
     """
     logger.info("Démarrage du worker...")
     setup_signal_handlers()

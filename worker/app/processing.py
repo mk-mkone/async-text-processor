@@ -14,17 +14,17 @@ executor = ProcessPoolExecutor(max_workers=4)
 
 def heavy_analysis(data: MessageData) -> dict:
     """
-    Simule une tâche métier intensive (IO + CPU).
+    Simulates an intensive business task (IO + CPU).
 
-    - Ajoute un délai aléatoire en 2 et 15 secondes.
-    - Fait un calcul de hash du texte.
-    - Retourne un dictionnaire enrichi.
+    - Adds a random delay between 2 and 15 seconds.
+    - Performs a hash computation on the text.
+    - Returns an enriched dictionary.
 
     Args:
-        data (MessageData): Données du message.
+        data (MessageData): Message data.
 
     Returns:
-        dict: Résultat enrichi avec durée, score, etc.
+        dict: Enriched result including duration, score, etc.
     """
     # Simule tache métier avec un délai IO-bound entre 2 et 15 secondes
     duration = random.randint(2, 15)
@@ -56,14 +56,14 @@ def heavy_analysis(data: MessageData) -> dict:
 
 async def process_message(data: MessageData):
     """
-    Dirige le traitement d’un message selon son type.
+    Handles the processing of a message based on its type.
 
-    - "update" : traitement, stockage, publication.
-    - "delete" : suppression MongoDB.
-    - autre : log warning.
+    - "update": processing, storage, publishing.
+    - "delete": delete from MongoDB.
+    - otherwise: log a warning.
 
     Args:
-        data (MessageData): Message structuré à traiter.
+        data (MessageData): Structured message to process.
     """
     if data.type == "update":
         loop = asyncio.get_running_loop()
